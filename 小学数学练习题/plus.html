@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>小学数学题</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+		<style>
+			.wrong{
+				color: red;
+				font-size: larger;
+				font-family: "微软雅黑";
+			}
+			.correct{
+				color: green;
+				font-size: larger;
+				font-family: "book antiqua";
+			}
+		</style>
+		<script>
+			function two_char(n) {
+            return n >= 10 ? n : "0" + n;
+        }
+        function time_fun() {
+            var sec=0;
+           t= setInterval(function () {
+                sec++;
+                var date = new Date(0, 0)
+                date.setSeconds(sec);
+                var h = date.getHours(), m = date.getMinutes(), s = date.getSeconds();
+                $("#time").html(two_char(h) + ":" + two_char(m) + ":" + two_char(s));
+            }, 1000);
+        }
+		</script>
+  </head>
+  <body onload="time_fun()">
+  	<div class="container-fluid">
+		<div class="row">
+			<div class="col-xm-12 col-md-12">
+				<nav class="navbar navbar-success navbar-fixed-bottom" role="navigation">
+						<button id="onceAgain" hidden="hidden" onclick="javascript:location.reload();$(this).hide()">重做</button>
+						<button id="back" type="button" class="btn btn-info btn-large pull-left" onclick="location.href='index.html'">后退</button>
+						<button id="done" type="button" class="btn btn-danger btn-large pull-right" onclick="location.href = 'mailto:1159322990@qq.com?subject=asc'">交卷</button>
+				</nav>
+				<span class="pull-right">得分：<span id="sorce" class="wrong">0</span>分</span>&nbsp;<span>用时：<span id="time" class="wrong">00:00:00</span></span>
+				<span id="note" class="correct pull-right"></span>
+				<table id="table" class="table table-bordered table-hover">
+				</table>
+			</div>
+		</div>
+	</div>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/util.js"></script>
+    <script>
+    	function getTr(){
+    		return $("<tr></tr>");
+    	}
+    	function getTd(i,j){
+    		return $('<td><span id="'+i+''+j+'">*</span><span id="'+i+'8'+j+'" hidden="hidden"></span><input id="'+i+'9'+j+'" type="text" class="form-control pull-right" style="width: 30px;"></td>');
+    	}
+    	/**
+    	 * 数字生成工厂
+    	 * @param {int} size 产生数字的取值范围
+    	 * @param {int} type 数字类型，1:整数，2：小数，3：分数
+    	 */
+    	function getNum(size,type){
+    		if(type == 1){//整数
+    			return getFloatNum(size,0);
+    		}else if(type==2){//小数
+    			return getFloatNum(size,2);
+    		}else if(type==3){//分数
+    			return simplfy(getFloatNum(size,0),getFloatNum(size,0));
+    		}
+    	}
+    	
+    	/**
+    	 * 数字生成器
+    	 * @param {int} size 产生数的范围 [1,size+1)
+    	 * @param {int} s 保留的位数
+    	 */
+    	function getFloatNum(size,s){
+    		var fnum = (Math.random()*size+1);
+    		return fnum.toFixed(s);
+    	}
+    	/**
+    	 * 判断上级页面传入的运算符，返回操作符，不仅用于计算，也用于页面显示
+    	 * @param {int} urlSign 
+    	 */
+    	function judgeOper(urlSign){
+    		if(urlSign==1){
+    			return '+'
+    		}else if(urlSign==2){
+    			return '-'
+    		}else if(urlSign==3){
+    			return '*'
+    		}else if(urlSign==4){
+    			return '÷'
+    		}
+    	}
+    	
+    	/**
+    	 * 计算，对算子1和2进行四则运算
+    	 * @param {Object} a 式1
+    	 * @param {Object} b 式2
+    	 * @param {Object} signal 运算符
+    	 */
+    	function oper(a,b,signal){
+    		if('+'===signal){
+    			return a + b;
+    		}else if('-'===signal){
+    			return a - b;
+    		}else if('*'===signal){
+    			return a * b;
+    		}else if('÷'===signal){
+    			return a / b;
+    		}
+    	}
+
+    	$(document).ready(function(){
+    		//解析url传入的参数,substr(1)获取？以后的字符
+    		var searchStrss = location.search.substr(1).split("&");
+    		var sizeStr = searchStrss[0].split('=');//出题范围
+    		var signalStr = searchStrss[1].split('=');//操作符
+    		var opertypeStr = searchStrss[2].split('=');//数据类型
+    		var size = sizeStr[1];
+				var ljxsign = judgeOper(signalStr[1]);
+				var opertype = opertypeStr[1];
+				
+    		var answer = [];//标准答案
+    		var inputVal = [];//用户答案
+    		var count = 0;//答案数
+    		var score = 0;
+    		var table = $('#table');
+    		for(var i = 1;i<=10;i++){
+    			var tr = getTr();
+    			for(var j = 1;j<=2;j++){
+    				var td = getTd(i,j);
+    				var n1 = getNum(size,opertype);
+    				var n2 = getNum(size,opertype);
+    				
+    				//各种运算细则
+    				
+    				if(ljxsign=='÷'&&opertype==1){//整除
+    					while(n1%n2!=0){
+    						n1 = getNum(size,opertype);
+    						n2 = getNum(size,opertype);
+    						if(n2==1||n1<=n2){//一定程度上减少结果为假分数或1的算式，提高难度
+    							n1 = getNum(size,opertype);
+    							n2 = getNum(size,opertype);
+    						}
+    					}
+    				}
+    				if((opertype == 2 ) && (ljxsign == '÷' || ljxsign == '*')){//小数乘除法时，生成的随机数保留一位小数，保证至少一个整数，降低难度
+    					if(Math.random()>0.5){
+    						n1 = getNum(size,1);
+    						n2 = trimFloat(n2,1);
+    					}else{
+    						n2 = getNum(size,1);
+    						n1 = trimFloat(n1,1);
+    					}
+    				}
+    				
+    				tr.append(td);
+    				table.append(tr);
+
+						if(opertype == 2){
+		    			$('#note').html('计算结果保留两位小数')
+		    		}
+    				$('#'+i+j).html(n1+' '+ljxsign+' '+n2+'=')//渲染题目
+    				//console.log('n1:'+n1+'  n2:'+n2)
+    				//收集正确答案
+    				if(opertype==3){//分数运算
+    					
+    					if(ljxsign=='+' || ljxsign=='-'){
+    						var temp = fenPlusOrMinus(ljxsign,n1,n2);
+    						if(temp.indexOf('-')!=-1){//统一负号的位置
+    							temp = temp.replace('-','');
+    							temp = '-'+temp;
+    						}
+    						answer[count++] = temp;
+    					}else if(ljxsign == '*'){
+    						answer[count++] = fenMutl(n1,n2);
+    					}else if(ljxsign == '÷'){
+    						answer[count++] = fenDivid(n1,n2);
+    					}
+    					//var xiao = oper(fen2xiao(n1),fen2xiao(n2),ljxsign);
+    					//answer[count++] = xiao2fen(xiao.toFixed(1));
+    					//console.log(xiao+'  '+xiao2fen(xiao.toFixed(1)));//分数计算不转换成小数，直接同分计算。生成的随机分数范围应该是分子分母在这个范围内，而不是整个分数的值
+    				}else if(opertype==2){
+    					//console.log(n1,n2,oper(n1,n2,ljxsign))
+    					answer[count++] = oper(parseFloat(n1),parseFloat(n2),ljxsign).toFixed(2);//小数计算结果保留两位小数
+    				}else{
+    					answer[count++] = oper(parseInt(n1),parseInt(n2),ljxsign);
+    				}
+    			}
+    		}
+    		
+    		for (var i = 0;i<answer.length;i++) {
+    			parseFloat(answer[i]).toFixed(2);//所有答案保留两位小数
+    			console.log(answer[i])
+    		}
+    		
+    		/**
+    		 * 获取页面输入
+    		 */
+    		function getInputAnswer(){
+    			var count1 = 0;
+    			for(var i = 1;i<=10;i++){
+    				for(var j = 1;j<=2;j++){
+    					inputVal[count1++] = $('#'+i+'9'+j).val();
+    				}
+    			}
+    		}
+    		
+    		$("#done").click(function(){
+    			clearInterval(t);//停止计时
+    			$("#back").removeClass('pull-left').addClass('pull-right');
+    			$('#onceAgain').show().addClass('btn btn-info btn-large pull-left');
+    			getInputAnswer();
+    			for (var i = 0;i<answer.length;i++) {
+    				if(answer[i]==inputVal[i]){
+    					score++;
+    				}else{//高亮显示错误，根据问题序号i判断页面问题块的id
+    					var idi = 0,idj = 0;
+    					if((i+1)%2==0){
+    						idj = 2;
+    						idi = (i+1)/2;
+    					}else{
+    						idj = 1;
+    						idi = (i+2)/2;
+    					}
+    					//console.log('#'+idi+idj)
+    					$('#'+idi+idj).addClass('wrong');
+    					$('#'+idi+'8'+idj).show().addClass('pull-right correct').html(answer[i]);
+    				}
+    			}
+    			$('#sorce').html(score);
+    			$("#done").hide()//防止重复提交
+    			
+    		})
+    	})
+    </script>
+  </body>
+</html>
